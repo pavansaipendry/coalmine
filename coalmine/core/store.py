@@ -29,6 +29,8 @@ class EventStore(Protocol):
 
     def run_ids(self) -> list[str]: ...
 
+    def max_seq(self, run_id: str) -> int: ...
+
     def close(self) -> None: ...
 
 
@@ -63,6 +65,14 @@ class SQLiteEventStore:
     def run_ids(self) -> list[str]:
         rows = self.conn.execute("SELECT DISTINCT run_id FROM events ORDER BY run_id").fetchall()
         return [r[0] for r in rows]
+
+    def max_seq(self, run_id: str) -> int:
+        """Highest seq stored for a run, or -1 if none — lets later passes
+        (judging, decisions) continue the same run's stream without colliding."""
+        row = self.conn.execute(
+            "SELECT MAX(seq) FROM events WHERE run_id=?", (run_id,)
+        ).fetchone()
+        return row[0] if row[0] is not None else -1
 
     def close(self) -> None:
         self.conn.close()
@@ -102,6 +112,12 @@ class PostgresEventStore:
         with self.conn.cursor() as cur:
             cur.execute("SELECT DISTINCT run_id FROM events ORDER BY run_id")
             return [r[0] for r in cur.fetchall()]
+
+    def max_seq(self, run_id: str) -> int:
+        with self.conn.cursor() as cur:
+            cur.execute("SELECT MAX(seq) FROM events WHERE run_id=%s", (run_id,))
+            row = cur.fetchone()
+        return row[0] if row[0] is not None else -1
 
     def close(self) -> None:
         self.conn.close()

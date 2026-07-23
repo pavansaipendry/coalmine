@@ -16,6 +16,7 @@ from dataclasses import dataclass
 REQUEST_RECEIVED = "request_received"
 CHAMPION_RESPONSE = "champion_response"
 SHADOW_RESPONSE = "shadow_response"
+VERDICT_RECORDED = "verdict_recorded"
 RUN_STARTED = "run_started"
 RUN_FINISHED = "run_finished"
 

@@ -1,0 +1,15 @@
+{
+  "config": {
+    "n_requests": 4000,
+    "judge": {
+      "accuracy": 0.85,
+      "tie_rate": 0.1,
+      "position_bias": 0.2
+    },
+    "seed": 87
+  },
+  "true_challenger_win_rate": 0.5,
+  "randomized_win_rate": 0.49819293855991104,
+  "fixed_order_win_rate": 0.3887496519075466,
+  "measured_position_bias": 0.091326105087573
+}

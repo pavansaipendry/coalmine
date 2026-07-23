@@ -1,0 +1,199 @@
+{
+  "config": {
+    "n_anchors": 300,
+    "n_rounds": 20,
+    "degrade_at_round": 10,
+    "accuracy_schedule": [
+      0.85,
+      0.72
+    ],
+    "tie_rate": 0.1,
+    "design_accuracy": 0.85,
+    "tolerance_floor": 0.8,
+    "seed": 55
+  },
+  "rounds": [
+    {
+      "round": 0,
+      "true_accuracy": 0.85,
+      "measured": 0.8479087452471483,
+      "wilson_low": 0.7995219562970565,
+      "wilson_high": 0.8862781588274219,
+      "n_decisive": 263,
+      "alarmed": false
+    },
+    {
+      "round": 1,
+      "true_accuracy": 0.85,
+      "measured": 0.8257575757575758,
+      "wilson_low": 0.7754180039793331,
+      "wilson_high": 0.866752592373138,
+      "n_decisive": 264,
+      "alarmed": false
+    },
+    {
+      "round": 2,
+      "true_accuracy": 0.85,
+      "measured": 0.8597785977859779,
+      "wilson_low": 0.8133927107444402,
+      "wilson_high": 0.8961068701050382,
+      "n_decisive": 271,
+      "alarmed": false
+    },
+    {
+      "round": 3,
+      "true_accuracy": 0.85,
+      "measured": 0.8215613382899628,
+      "wilson_low": 0.7713763699153218,
+      "wilson_high": 0.8626911623085032,
+      "n_decisive": 269,
+      "alarmed": false
+    },
+    {
+      "round": 4,
+      "true_accuracy": 0.85,
+      "measured": 0.8218181818181818,
+      "wilson_low": 0.7722506321075558,
+      "wilson_high": 0.8625183550163166,
+      "n_decisive": 275,
+      "alarmed": false
+    },
+    {
+      "round": 5,
+      "true_accuracy": 0.85,
+      "measured": 0.8308270676691729,
+      "wilson_low": 0.7811375677171484,
+      "wilson_high": 0.8710969283724093,
+      "n_decisive": 266,
+      "alarmed": false
+    },
+    {
+      "round": 6,
+      "true_accuracy": 0.85,
+      "measured": 0.8248175182481752,
+      "wilson_low": 0.775403995024649,
+      "wilson_high": 0.8652488085871932,
+      "n_decisive": 274,
+      "alarmed": false
+    },
+    {
+      "round": 7,
+      "true_accuracy": 0.85,
+      "measured": 0.8805970149253731,
+      "wilson_low": 0.8362977565302094,
+      "wilson_high": 0.9141392626750924,
+      "n_decisive": 268,
+      "alarmed": false
+    },
+    {
+      "round": 8,
+      "true_accuracy": 0.85,
+      "measured": 0.8603773584905661,
+      "wilson_low": 0.8134775013666051,
+      "wilson_high": 0.8969780233736138,
+      "n_decisive": 265,
+      "alarmed": false
+    },
+    {
+      "round": 9,
+      "true_accuracy": 0.85,
+      "measured": 0.8884758364312267,
+      "wilson_low": 0.8452562411818627,
+      "wilson_high": 0.920755979828423,
+      "n_decisive": 269,
+      "alarmed": false
+    },
+    {
+      "round": 10,
+      "true_accuracy": 0.72,
+      "measured": 0.7446808510638298,
+      "wilson_low": 0.6907357065332139,
+      "wilson_high": 0.7920491645282409,
+      "n_decisive": 282,
+      "alarmed": true
+    },
+    {
+      "round": 11,
+      "true_accuracy": 0.72,
+      "measured": 0.7063197026022305,
+      "wilson_low": 0.6492937845658466,
+      "wilson_high": 0.7575356725257407,
+      "n_decisive": 269,
+      "alarmed": true
+    },
+    {
+      "round": 12,
+      "true_accuracy": 0.72,
+      "measured": 0.7316176470588235,
+      "wilson_low": 0.6759993484038378,
+      "wilson_high": 0.7807845449610498,
+      "n_decisive": 272,
+      "alarmed": true
+    },
+    {
+      "round": 13,
+      "true_accuracy": 0.72,
+      "measured": 0.7306273062730627,
+      "wilson_low": 0.6748554573101145,
+      "wilson_high": 0.779951966311346,
+      "n_decisive": 271,
+      "alarmed": true
+    },
+    {
+      "round": 14,
+      "true_accuracy": 0.72,
+      "measured": 0.7116104868913857,
+      "wilson_low": 0.654573376800003,
+      "wilson_high": 0.7626446576526069,
+      "n_decisive": 267,
+      "alarmed": true
+    },
+    {
+      "round": 15,
+      "true_accuracy": 0.72,
+      "measured": 0.7106227106227107,
+      "wilson_low": 0.6542015449062352,
+      "wilson_high": 0.7611984527819736,
+      "n_decisive": 273,
+      "alarmed": true
+    },
+    {
+      "round": 16,
+      "true_accuracy": 0.72,
+      "measured": 0.700374531835206,
+      "wilson_low": 0.6429011479084941,
+      "wilson_high": 0.7521637165731809,
+      "n_decisive": 267,
+      "alarmed": true
+    },
+    {
+      "round": 17,
+      "true_accuracy": 0.72,
+      "measured": 0.7148148148148148,
+      "wilson_low": 0.6582394846344428,
+      "wilson_high": 0.7653630651607672,
+      "n_decisive": 270,
+      "alarmed": true
+    },
+    {
+      "round": 18,
+      "true_accuracy": 0.72,
+      "measured": 0.7814814814814814,
+      "wilson_low": 0.7284285059842799,
+      "wilson_high": 0.8266369040922021,
+      "n_decisive": 270,
+      "alarmed": false
+    },
+    {
+      "round": 19,
+      "true_accuracy": 0.72,
+      "measured": 0.7424242424242424,
+      "wilson_low": 0.6864603285846935,
+      "wilson_high": 0.7914340687008663,
+      "n_decisive": 264,
+      "alarmed": true
+    }
+  ],
+  "alarm_round": 10,
+  "rounds_to_alarm": 0
+}

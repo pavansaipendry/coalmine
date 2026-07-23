@@ -39,6 +39,7 @@ class ShadowRouter:
             {
                 "request_index": request.index,
                 "query_id": request.query.id,
+                "query_text": request.query.text,
                 "topic": request.query.topic,
             },
         )

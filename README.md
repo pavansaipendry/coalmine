@@ -67,6 +67,47 @@ real service container). Appends are idempotent on (run_id, seq), so
 at-least-once delivery yields exactly-once storage: the chaos-testing phase is
 safe by construction.
 
+## Results so far (Phase 3: the judging layer, and the first full loop)
+
+**The full loop catches an injected regression end to end.** First composition
+of all three phases: 30,000 simulated requests flow through the shadow router;
+a noisy position-randomized judge (accuracy 85%, ties 10%, position bias 15%)
+turns the 25% shadow-sampled pairs into verdicts; the calibrated CUSUM watches
+the decisive-verdict stream. A 15% ε-mixture regression injected at request
+10,000 drags the observed win rate from 49.8% to 44.0%; the alarm fires 5,566
+requests later, while the paired null run stays quiet for all 30,000 requests.
+Traffic, verdicts, and detection all live in one replayable event stream.
+
+![full loop](experiments/results/full_loop.png)
+
+**Position bias: measured, and neutralized by randomization.** The same
+equal-quality responses judged by the same judge with a 20% first-position
+preference: randomized presentation preserves parity (49.8%) and exposes the
+bias in position space (+9.1 points toward first-shown); always showing the
+champion first silently corrupts the challenger's measured win rate to 38.9%.
+Every real comparison in this system randomizes — and records the order, so
+the bias stays measurable.
+
+![position bias](experiments/results/position_bias.png)
+
+**The system monitors its own sensor.** Every detection guarantee is
+conditioned on judge accuracy, so the judge is re-calibrated each round
+against a frozen anchor set with known labels. When the judge's true accuracy
+silently degrades from 0.85 to 0.72, the Wilson interval crosses the design
+tolerance in the very round the degradation begins — zero false alarms in the
+ten healthy rounds before it. (One post-degradation round briefly recovers
+above threshold on sampling noise; alarm persistence rules are future work,
+and honestly noted.)
+
+![judge calibration](experiments/results/judge_calibration.png)
+
+The production judge (`coalmine.judging.llm.LLMJudge`, Claude Haiku via
+structured outputs, temperature 0) implements the same protocol as the
+simulation oracle and sees only query and response texts — never config
+identity or ground-truth labels. Per the cost discipline in the design, the
+big experiments never call it: it exists for the live demo path and the
+anchor-set calibration study that estimates the channel parameters.
+
 ## Design principles
 
 - **Verdict-channel abstraction.** The decision engine consumes win/loss/tie
@@ -91,11 +132,14 @@ safe by construction.
 
 ```bash
 uv venv .venv && uv pip install -e ".[dev]" -p .venv/bin/python
-.venv/bin/pytest -q                        # 51 deterministic tests (4 need Postgres)
+.venv/bin/pytest -q                        # 76 deterministic tests (4 need Postgres)
 .venv/bin/python -m coalmine.experiments.detection_latency
 .venv/bin/python -m coalmine.experiments.sprt_validation
 .venv/bin/python -m coalmine.experiments.epsilon_verification
 .venv/bin/python -m coalmine.experiments.shadow_overhead
+.venv/bin/python -m coalmine.experiments.full_loop
+.venv/bin/python -m coalmine.experiments.position_bias
+.venv/bin/python -m coalmine.experiments.judge_calibration
 ```
 
 Runs on CPU in a few minutes; no GPU anywhere. The Postgres store tests skip
@@ -107,8 +151,8 @@ unless `COALMINE_PG_DSN` is set (CI provides a postgres:16 service container).
 |---|---|---|
 | 1 | Decision engine: SPRT + CUSUM, judge channel model, Wald planning calculator, vectorized Monte Carlo validation | **done** |
 | 2 | Traffic simulator, shadow router, ε-mixture response pools, event-sourced log (SQLite + Postgres) | **done** |
-| 3 | Real judging layer: position randomization, measured position bias, sampling, judge calibration vs anchor set | next |
-| 4 | mSPRT + confidence sequences; three-way method comparison; k challengers with alpha spending; stratified tests | |
+| 3 | Judging layer: position randomization + measured bias, sampling, anchor-set calibration, LLM judge, full-loop detection | **done** |
+| 4 | mSPRT + confidence sequences; three-way method comparison; k challengers with alpha spending; stratified tests | next |
 | 5 | Multi-service fleet on Redis streams, load tests, chaos tests, Prometheus/Grafana/OTel | |
 | 6 | Closed-loop canary lifecycle: shadow → 1% → 5% → 25% → 100% ramp with per-step gates and auto-rollback; React dashboard | |
 
