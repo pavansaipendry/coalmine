@@ -1,0 +1,80 @@
+{
+  "config": {
+    "horizon": 20000,
+    "changepoint": 5000,
+    "p0": 0.5,
+    "p1_design": 0.45,
+    "false_alarm_budget": 0.05,
+    "judge_accuracy": 0.85,
+    "tie_rate": 0.1,
+    "sampling_rate": 0.2,
+    "requests_per_verdict": 5.5555555555555545,
+    "seed": 2026,
+    "trials_per_shift": 1500
+  },
+  "threshold_h": 7.389748135095208,
+  "cusum_false_alarm_rate": 0.0595,
+  "naive_peeking_false_alarm_rate": 0.437,
+  "per_shift": [
+    {
+      "true_shift": 0.01,
+      "observed_shift": 0.006999999999999999,
+      "detect_rate": 0.17,
+      "premature_alarms": 14,
+      "latency_verdicts_q25": 4194.0,
+      "latency_verdicts_median": 7190.0,
+      "latency_verdicts_q75": 11047.0,
+      "latency_requests_median": 39944.44444444444
+    },
+    {
+      "true_shift": 0.02,
+      "observed_shift": 0.013999999999999999,
+      "detect_rate": 0.45866666666666667,
+      "premature_alarms": 21,
+      "latency_verdicts_q25": 3461.25,
+      "latency_verdicts_median": 6561.5,
+      "latency_verdicts_q75": 10160.5,
+      "latency_requests_median": 36452.777777777774
+    },
+    {
+      "true_shift": 0.03,
+      "observed_shift": 0.020999999999999998,
+      "detect_rate": 0.836,
+      "premature_alarms": 17,
+      "latency_verdicts_q25": 2585.75,
+      "latency_verdicts_median": 4772.5,
+      "latency_verdicts_q75": 8495.25,
+      "latency_requests_median": 26513.888888888883
+    },
+    {
+      "true_shift": 0.05,
+      "observed_shift": 0.034999999999999996,
+      "detect_rate": 0.9906666666666667,
+      "premature_alarms": 14,
+      "latency_verdicts_q25": 1279.25,
+      "latency_verdicts_median": 2032.0,
+      "latency_verdicts_q75": 3278.5,
+      "latency_requests_median": 11288.888888888887
+    },
+    {
+      "true_shift": 0.075,
+      "observed_shift": 0.0525,
+      "detect_rate": 0.9853333333333333,
+      "premature_alarms": 22,
+      "latency_verdicts_q25": 696.0,
+      "latency_verdicts_median": 985.5,
+      "latency_verdicts_q75": 1396.5,
+      "latency_requests_median": 5474.999999999999
+    },
+    {
+      "true_shift": 0.1,
+      "observed_shift": 0.06999999999999999,
+      "detect_rate": 0.9873333333333333,
+      "premature_alarms": 19,
+      "latency_verdicts_q25": 504.0,
+      "latency_verdicts_median": 648.0,
+      "latency_verdicts_q75": 829.0,
+      "latency_requests_median": 3599.999999999999
+    }
+  ]
+}
