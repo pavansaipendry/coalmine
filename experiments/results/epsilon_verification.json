@@ -1,0 +1,15 @@
+{
+  "config": {
+    "n_requests": 20000,
+    "changepoint": 10000,
+    "epsilon": 0.1,
+    "shadow_rate": 0.25,
+    "rolling_window": 500,
+    "seed": 41
+  },
+  "measured_epsilon_pre": 0.0,
+  "measured_epsilon_post": 0.09929372663066058,
+  "shadow_responses": 4892,
+  "content_deterministic": true,
+  "fingerprint": "7d8546c064c3c72244f5249452be16de6f762412e6a9323ad7b3d74ef6e34464"
+}

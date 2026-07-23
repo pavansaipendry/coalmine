@@ -1,0 +1,41 @@
+{
+  "config": {
+    "n_requests": 1200,
+    "rate_rps": 60.0,
+    "seed": 99,
+    "champion_latency": {
+      "median_ms": 80.0,
+      "sigma": 0.4
+    },
+    "challenger_latency": {
+      "median_ms": 120.0,
+      "sigma": 0.5
+    }
+  },
+  "rows": [
+    {
+      "shadow_rate": 0.0,
+      "shadow_responses": 0,
+      "p50": 81.89097896683961,
+      "p95": 158.05440444964916,
+      "p99": 215.78075050143522,
+      "p99_delta_vs_off": 0.0
+    },
+    {
+      "shadow_rate": 0.2,
+      "shadow_responses": 242,
+      "p50": 81.59224997507408,
+      "p95": 157.46173541410826,
+      "p99": 215.70514450082553,
+      "p99_delta_vs_off": -0.07560600060969591
+    },
+    {
+      "shadow_rate": 1.0,
+      "shadow_responses": 1200,
+      "p50": 81.59172895830125,
+      "p95": 157.71597919519988,
+      "p99": 215.95052468124774,
+      "p99_delta_vs_off": 0.16977417981252074
+    }
+  ]
+}

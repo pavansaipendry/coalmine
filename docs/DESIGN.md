@@ -92,6 +92,15 @@ Hence the synthetic verdict channel: the vectorized harness
 (`coalmine/sim/runner.py`) runs thousands of trials as numpy sweeps, and is
 cross-validated trial-for-trial against the scalar implementations in tests.
 
+### Determinism contract (Phase 2, implemented)
+
+Response content is a pure function of (seed, request_index, config): every
+random draw comes from an RNG keyed by those three, never a shared generator.
+Same-seed runs are therefore content-identical even though concurrent shadow
+tasks interleave nondeterministically — replay comparisons canonicalize by
+sorting payloads (order-free fingerprints). Content is guaranteed; global
+event ordering deliberately is not.
+
 ## Systems layer (Phases 2, 5, 6)
 
 Multi-service topology on Redis streams with consumer groups (traffic gen,

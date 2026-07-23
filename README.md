@@ -40,6 +40,33 @@ predicts. This is the evidence the engine is correct, not just plausible.
 
 ![sprt validation](experiments/results/sprt_validation.png)
 
+## Results so far (Phase 2: traffic, shadowing, the event log)
+
+**Shadowing costs the user nothing — measured, not asserted.** Three paced runs
+(1,200 requests at 60 rps) share identical seeded arrivals and champion latency
+draws; only the shadow rate varies. With 100% of traffic shadowed to a
+challenger 50% *slower* than the champion, p99 user-facing latency moves from
+215.8ms to 216.0ms — 0.2ms, within timer noise. Shadow calls are fired as
+tasks that the user path never awaits.
+
+![shadow overhead](experiments/results/shadow_overhead.png)
+
+**Injected ground truth is recoverable from the event log.** A 20,000-request
+run injects a 10% ε-mixture regression into the challenger at request 10,000.
+Replaying the append-only log recovers ε = 0.000 before the changepoint and
+0.099 after, against 0.10 injected — the property that makes every future
+detection claim scorable against exact truth. Same-seed runs produce identical
+order-free content fingerprints (response content is a pure function of
+(seed, request, config); scheduler interleaving is canonicalized away).
+
+![epsilon verification](experiments/results/epsilon_verification.png)
+
+Storage is event-sourced behind one interface with two backends — SQLite
+(zero-setup dev) and Postgres (the fleet backend, exercised in CI against a
+real service container). Appends are idempotent on (run_id, seq), so
+at-least-once delivery yields exactly-once storage: the chaos-testing phase is
+safe by construction.
+
 ## Design principles
 
 - **Verdict-channel abstraction.** The decision engine consumes win/loss/tie
@@ -64,20 +91,23 @@ predicts. This is the evidence the engine is correct, not just plausible.
 
 ```bash
 uv venv .venv && uv pip install -e ".[dev]" -p .venv/bin/python
-.venv/bin/pytest -q                                      # 23 deterministic tests
+.venv/bin/pytest -q                        # 51 deterministic tests (4 need Postgres)
 .venv/bin/python -m coalmine.experiments.detection_latency
 .venv/bin/python -m coalmine.experiments.sprt_validation
+.venv/bin/python -m coalmine.experiments.epsilon_verification
+.venv/bin/python -m coalmine.experiments.shadow_overhead
 ```
 
-Runs on CPU in a few minutes; no GPU anywhere in this phase.
+Runs on CPU in a few minutes; no GPU anywhere. The Postgres store tests skip
+unless `COALMINE_PG_DSN` is set (CI provides a postgres:16 service container).
 
 ## Roadmap
 
 | Phase | Scope | Status |
 |---|---|---|
 | 1 | Decision engine: SPRT + CUSUM, judge channel model, Wald planning calculator, vectorized Monte Carlo validation | **done** |
-| 2 | Traffic simulator, shadow router, response pools, event-sourced Postgres log | next |
-| 3 | Real judging layer: position randomization, measured position bias, sampling, judge calibration vs anchor set | |
+| 2 | Traffic simulator, shadow router, ε-mixture response pools, event-sourced log (SQLite + Postgres) | **done** |
+| 3 | Real judging layer: position randomization, measured position bias, sampling, judge calibration vs anchor set | next |
 | 4 | mSPRT + confidence sequences; three-way method comparison; k challengers with alpha spending; stratified tests | |
 | 5 | Multi-service fleet on Redis streams, load tests, chaos tests, Prometheus/Grafana/OTel | |
 | 6 | Closed-loop canary lifecycle: shadow → 1% → 5% → 25% → 100% ramp with per-step gates and auto-rollback; React dashboard | |
