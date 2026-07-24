@@ -28,6 +28,11 @@ dev = [
 llm = [
     "anthropic>=0.116",
 ]
+rm = [
+    "torch>=2.2",
+    "transformers>=4.40",
+    "datasets>=2.19",
+]
 
 [tool.ruff]
 line-length = 100

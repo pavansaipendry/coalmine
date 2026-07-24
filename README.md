@@ -218,17 +218,50 @@ request logged, shadow-sampled, and judged asynchronously.
 
 ![http load](experiments/results/http_load.png)
 
+## Results so far (beyond the plan: better detection, a real judge, no API)
+
+**Ensemble judging buys back the channel's attenuation — quadratically.**
+Detection latency scales like 1/shift² and the judge channel attenuates every
+true shift by (2a − 1), so raising effective judge accuracy pays off twice
+over. Majority-of-k voting with the same noisy members (0.85 accuracy, 10%
+ties, 15% position bias) raises measured effective accuracy 0.80 → 0.89
+(k = 3) → 0.94 (k = 5), cutting median detection latency for a 3% true
+regression from 26,566 requests to 19,314 (−27%) and 14,888 (−44%) — and for
+a 5% regression by up to −52% — at k× judge cost, with the null (and so the
+false-alarm budget) untouched by k. This is the sampling-rate knob's sibling:
+two principled ways to spend judge budget for faster detection.
+
+![ensemble detection](experiments/results/ensemble_detection.png)
+
+**The judge channel, measured on human ground truth — for $0.00.** The
+"real-judge study" needs no AI API at all: the judge is a local CPU reward
+model (OpenAssistant DeBERTa — position-invariant *by construction*, verified
+100% swap-consistent, ~0.5s/verdict), and the ground truth is LMSYS's
+MT-Bench human judgments — 709 consensus-labeled pairs of real model
+responses. Measured accuracy against human preference: **69.4%**
+[65.9, 72.7] overall, 75.5% on unanimously-voted pairs, against a 97% human
+self-agreement ceiling. The planning consequence is the study's real
+takeaway: at the measured channel, a promotion decision that the assumed
+a = 0.85 channel prices at ~4,300 requests actually costs ~12,600 — judge
+quality is the single most expensive parameter in the system, which is
+exactly what the ensemble result above (and paid API judges, for teams that
+use them) buys back.
+
+![reward judge study](experiments/results/reward_judge_study.png)
+
 ## Honest ledger
 
 Everything above is measured by seeded, reproducible experiments; every
-detector's threshold is calibrated by simulating its own procedure. Remaining
-future work, deliberately not claimed: real-dataset pools and MT-Bench anchor
-import (format and loaders exist; the data path needs a download step), a
-live LLM-judge calibration study (LLMJudge is built and unit-tested; the live
-call needs an API key decision), a React/Vite build of the dashboard (the
-current one is a self-contained single file), k6 runs with the real binary
-(the Python load harness is the measured path), and Postgres partitioning for
-long-horizon soaks.
+detector's threshold is calibrated by simulating its own procedure. The
+judge channel is now grounded in real human-preference data via the local
+reward-model study (zero API cost); `LLMJudge` (Claude via structured
+outputs) remains built and unit-tested for teams that want an API judge —
+its live calibration would run through the same anchor machinery. Remaining
+future work, deliberately not claimed: real-response pools for the traffic
+simulator (the MT-Bench loader is the natural source), a React/Vite build of
+the dashboard (the current one is a self-contained single file), k6 runs
+with the real binary (the Python load harness is the measured path), and
+Postgres partitioning for long-horizon soaks.
 
 ## Design principles
 

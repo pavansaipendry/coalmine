@@ -74,6 +74,23 @@ class EnsembleJudge:
         return EnsembleVerdict(majority, verdicts, disagreed)
 
 
+def majority_accuracy(accuracy: float, k: int) -> float:
+    """P(majority of k independent judges is correct), each correct with
+    probability `accuracy`, no ties. The no-bias reference for ensemble
+    detection: at a = 0.85, k = 3 gives 0.939 — higher effective accuracy
+    means less judge-channel attenuation, which is why ensembles detect
+    regressions faster. (With ties and position bias, the experiments measure
+    the effective accuracy empirically instead of trusting this formula.)"""
+    from math import comb
+
+    if k % 2 == 0 or k < 1:
+        raise ValueError("k must be odd and positive")
+    needed = k // 2 + 1
+    return float(
+        sum(comb(k, i) * accuracy**i * (1 - accuracy) ** (k - i) for i in range(needed, k + 1))
+    )
+
+
 def rolling_disagreement(disagreements: list[bool], window: int) -> np.ndarray:
     """Rolling mean of the disagreement indicator — the sensor-drift signal."""
     if len(disagreements) < window:

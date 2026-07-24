@@ -1,0 +1,22 @@
+{
+  "config": {
+    "judge": "rm:reward-model-deberta-v3-base",
+    "n_pairs": 709,
+    "assumed_accuracy": 0.85,
+    "sampling_rate": 0.25,
+    "cost_usd": 0.0
+  },
+  "human_agreement_ceiling": 0.9695175438596492,
+  "accuracy": 0.693935119887165,
+  "wilson_low": 0.6590419884771458,
+  "wilson_high": 0.7267379660036254,
+  "unanimous_accuracy": 0.7554744525547445,
+  "unanimous_pairs": 274,
+  "swap_consistency": 1.0,
+  "seconds_per_verdict": 0.5056364716266115,
+  "wall_minutes": 6.234008661905924,
+  "planning": {
+    "assumed_expected_requests_h1": 4307.052355018132,
+    "measured_expected_requests_h1": 12632.581307323966
+  }
+}

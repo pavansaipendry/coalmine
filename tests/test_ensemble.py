@@ -78,3 +78,13 @@ def test_rolling_and_threshold():
 def test_needs_two_members():
     with pytest.raises(ValueError):
         EnsembleJudge(_members([0.85]))
+
+
+def test_majority_accuracy():
+    from coalmine.judging.ensemble import majority_accuracy
+
+    assert majority_accuracy(0.85, 1) == pytest.approx(0.85)
+    assert majority_accuracy(0.85, 3) == pytest.approx(0.939, abs=0.001)
+    assert majority_accuracy(0.85, 5) > majority_accuracy(0.85, 3) > 0.85
+    with pytest.raises(ValueError):
+        majority_accuracy(0.85, 2)
