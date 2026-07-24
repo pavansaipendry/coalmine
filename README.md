@@ -12,6 +12,22 @@ replaces the eyeball with sequential tests that hold their error budgets under
 continuous monitoring, and closes the loop: shadow → gated canary ramp →
 promote or auto-rollback.
 
+## Headline results
+
+| Claim | Measured |
+|---|---|
+| Repeated t-test "peeking" vs calibrated sequential monitoring, same nominal 5% | **43.7% vs 5.9%** false alarms |
+| Closed canary loop: mid-ramp regression auto-rolled-back, zero humans | **+1,065 requests** after injection; 0 challenger-served users after |
+| Chaos: every judge worker killed mid-run on the Redis fleet (~2,700 req/s) | **byte-identical** final state, same alarm |
+| Judge measured against 709 human-labeled MT-Bench pairs, $0.00 spent | **69.4%** agreement; promotion cost 4.3k → 12.6k requests vs assumed channel |
+| Majority-of-3/5 ensemble judging (effective accuracy 0.80 → 0.89 / 0.94) | detection latency **−27% to −52%** |
+| Shadow-testing overhead at 100% sampling, challenger 50% slower | **+0.2ms** p99 user-facing |
+| Verification | 135 deterministic tests (CI: real Postgres + Redis), 17 reproducible experiments |
+
+Every threshold in the system is calibrated by simulating its own procedure;
+every claim above regenerates from a seeded experiment listed under
+[Repro](#repro).
+
 ## Results so far (Phase 1: the decision engine)
 
 All numbers from seeded Monte Carlo runs — reproduce with the commands below.
