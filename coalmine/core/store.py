@@ -40,6 +40,11 @@ class SQLiteEventStore:
         # serialized by the single writer task, never concurrent.
         self.conn = sqlite3.connect(str(path), check_same_thread=False)
         self.conn.execute("PRAGMA journal_mode=WAL")
+        # WAL + NORMAL is the standard production pairing: commits don't wait
+        # for a full fsync (the WAL still guarantees atomicity; an OS crash
+        # can lose the tail). Without it, per-batch fsyncs dominate the API
+        # serve path's tail latency.
+        self.conn.execute("PRAGMA synchronous=NORMAL")
         self.conn.execute(
             "CREATE TABLE IF NOT EXISTS events ("
             " run_id TEXT NOT NULL, seq INTEGER NOT NULL, ts REAL NOT NULL,"
@@ -73,6 +78,16 @@ class SQLiteEventStore:
             "SELECT MAX(seq) FROM events WHERE run_id=?", (run_id,)
         ).fetchone()
         return row[0] if row[0] is not None else -1
+
+    def tail(self, after_rowid: int, limit: int = 500) -> list[tuple[int, Event]]:
+        """Events in insertion order after a rowid cursor — the SSE feed for
+        the dashboard (insertion order, unlike read(), which is seq order)."""
+        rows = self.conn.execute(
+            "SELECT rowid, run_id, seq, ts, type, payload FROM events"
+            " WHERE rowid > ? ORDER BY rowid LIMIT ?",
+            (after_rowid, limit),
+        ).fetchall()
+        return [(r[0], Event(r[1], r[2], r[4], json.loads(r[5]), r[3])) for r in rows]
 
     def close(self) -> None:
         self.conn.close()

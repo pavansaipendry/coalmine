@@ -1,0 +1,22 @@
+{
+  "config": {
+    "light_requests": 1200,
+    "light_concurrency": 4,
+    "requests": 4000,
+    "concurrency": 32,
+    "warmup": 300,
+    "seed": 137
+  },
+  "rps": 328.3831320704633,
+  "wall_seconds": 12.180893625016324,
+  "latency_ms": {
+    "p50": 8.876146050170064,
+    "p95": 21.88569442369042,
+    "p99": 72.23824908724055
+  },
+  "saturated_latency_ms": {
+    "p50": 59.55224949866533,
+    "p99": 637.8145604918209
+  },
+  "verdicts_during_test": 1752
+}

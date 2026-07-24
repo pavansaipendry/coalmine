@@ -1,0 +1,79 @@
+{
+  "config": {
+    "n_requests": 30000,
+    "shadow_rate": 0.35,
+    "rollback_epsilon": 0.25,
+    "rollback_changepoint": 6000,
+    "judge": {
+      "accuracy": 0.85,
+      "tie_rate": 0.1,
+      "position_bias": 0.15
+    },
+    "cusum_h": 6.678611961772855,
+    "margin": 0.06,
+    "seed": 131
+  },
+  "promoted_run": {
+    "state": "promoted",
+    "transitions": [
+      {
+        "request_index": 3259,
+        "kind": "canary_advanced",
+        "stage": "canary-1",
+        "share": 0.01,
+        "verdicts_in_stage": 0
+      },
+      {
+        "request_index": 5229,
+        "kind": "canary_advanced",
+        "stage": "canary-5",
+        "share": 0.05,
+        "verdicts_in_stage": 0
+      },
+      {
+        "request_index": 8569,
+        "kind": "canary_advanced",
+        "stage": "canary-25",
+        "share": 0.25,
+        "verdicts_in_stage": 0
+      },
+      {
+        "request_index": 10525,
+        "kind": "canary_promoted",
+        "stage": "full",
+        "share": 1.0,
+        "verdicts_in_stage": 0
+      }
+    ],
+    "verdicts": 3381
+  },
+  "rollback_run": {
+    "state": "rolled_back",
+    "transitions": [
+      {
+        "request_index": 3259,
+        "kind": "canary_advanced",
+        "stage": "canary-1",
+        "share": 0.01,
+        "verdicts_in_stage": 0
+      },
+      {
+        "request_index": 5229,
+        "kind": "canary_advanced",
+        "stage": "canary-5",
+        "share": 0.05,
+        "verdicts_in_stage": 0
+      },
+      {
+        "request_index": 7065,
+        "kind": "canary_rolled_back",
+        "stage": "rolled-back",
+        "share": 0.0,
+        "verdicts_in_stage": 600
+      }
+    ],
+    "rollback_at": 7065,
+    "rollback_latency": 1065,
+    "challenger_served_after_rollback": 0
+  }
+}

@@ -21,6 +21,7 @@ from coalmine.fleet import metrics
 from coalmine.fleet.bus import Bus
 from coalmine.fleet.drift import InputDriftMonitor
 from coalmine.fleet.services import (
+    CanaryController,
     DecisionService,
     DriftService,
     JudgeWorker,
@@ -77,6 +78,7 @@ class FleetRunner:
         drift_monitor: InputDriftMonitor | None = None,
         cusum_p1: float = 0.45,
         reclaim_idle_ms: int = 800,
+        lifecycle=None,  # CanaryLifecycle -> run the canary controller instead
     ):
         self.bus = bus
         self.store = store
@@ -112,14 +114,20 @@ class FleetRunner:
             scenario.shadow_rate,
             seed,
             {q.id: q for q in queries},
+            consume_control=lifecycle is not None,
         )
         self.judge_sink = _Sink(store, run_id, "judge", store_lock)
-        self.decision = DecisionService(
-            bus,
-            _Sink(store, run_id, "decision", store_lock),
-            CUSUM(p0=0.5, p1=cusum_p1, h=cusum_h),
-            MixtureSPRT(p0=0.5, alpha=0.05),
-        )
+        if lifecycle is not None:
+            self.decision = CanaryController(
+                bus, _Sink(store, run_id, "canary", store_lock), lifecycle
+            )
+        else:
+            self.decision = DecisionService(
+                bus,
+                _Sink(store, run_id, "decision", store_lock),
+                CUSUM(p0=0.5, p1=cusum_p1, h=cusum_h),
+                MixtureSPRT(p0=0.5, alpha=0.05),
+            )
         self.drift = (
             DriftService(bus, _Sink(store, run_id, "drift", store_lock), drift_monitor)
             if drift_monitor
@@ -199,9 +207,9 @@ class FleetRunner:
             wall_seconds=wall,
             requests_per_second=self.scenario.n_requests / wall,
             verdicts=verdict_count,
-            quality_alarm_at=self.decision.quality_alarm_at,
-            promoted_at=self.decision.promoted_at,
-            drift_gated_at=self.decision.drift_gated_at,
+            quality_alarm_at=getattr(self.decision, "quality_alarm_at", None),
+            promoted_at=getattr(self.decision, "promoted_at", None),
+            drift_gated_at=getattr(self.decision, "drift_gated_at", None),
             worker_verdicts={n: w.judged for n, w in self.workers.items()},
             pair_latency_ms=(
                 {

@@ -42,12 +42,20 @@ from coalmine.stats.msprt import MixtureSPRT
 from coalmine.traffic.dataset import Query
 from coalmine.traffic.simulator import _weights_vector
 
-REQUESTS, PAIRS, VERDICTS, ALARMS = "requests", "pairs", "verdicts", "alarms"
+REQUESTS, PAIRS, VERDICTS, ALARMS, CONTROL = (
+    "requests",
+    "pairs",
+    "verdicts",
+    "alarms",
+    "control",
+)
 
 DRIFT_ALARM = "drift_alarm"
 QUALITY_ALARM = "quality_alarm"
 PROMOTION = "promotion"
 TEST_RESET = "test_reset"
+CANARY_TRANSITION = "canary_transition"
+SHARE_UPDATE = "share_update"
 
 
 class _Sink:
@@ -134,6 +142,7 @@ class RouterService:
         shadow_rate: float,
         seed: int,
         queries_by_id: dict[str, Query],
+        consume_control: bool = False,
     ):
         self.bus = bus
         self.sink = store_sink
@@ -142,13 +151,24 @@ class RouterService:
         self.shadow_rate = shadow_rate
         self.seed = seed
         self.queries_by_id = queries_by_id
+        self.consume_control = consume_control
+        self.user_share = 0.0  # fraction of user traffic the challenger serves
 
     async def run(self, consumer: str = "router-0") -> None:
-        async for message in self.bus.consume([REQUESTS], "router", consumer):
-            t0 = time.perf_counter()
+        streams = [REQUESTS, CONTROL] if self.consume_control else [REQUESTS]
+        async for message in self.bus.consume(streams, "router", consumer):
             p = message.payload
+            if message.stream == CONTROL:
+                if p.get("kind") == SHARE_UPDATE:
+                    self.user_share = p["share"]
+                await self.bus.ack(message, "router")
+                continue
+            t0 = time.perf_counter()
             index, query = p["index"], self.queries_by_id[p["query_id"]]
             request = Request(index, query)
+            canary_serves = (
+                request_rng(self.seed, index, "__canary__").random() < self.user_share
+            )
             await self.sink.emit(
                 10 * index + 0,
                 REQUEST_RECEIVED,
@@ -157,6 +177,7 @@ class RouterService:
                     "query_id": query.id,
                     "query_text": query.text,
                     "topic": query.topic,
+                    "served_by": "challenger" if canary_serves else "champion",
                 },
             )
             champ = await self.champion.generate(request)
@@ -289,6 +310,48 @@ class DriftService:
                 metrics.ALARMS.labels(DRIFT_ALARM).inc()
             await self.bus.ack(message, "drift")
             metrics.MESSAGES_PROCESSED.labels("drift").inc()
+
+
+class CanaryController:
+    """The capstone service: consumes verdicts, drives the canary lifecycle
+    (per-stage non-inferiority gates + continuous rollback CUSUM), publishes
+    share updates on the control stream for the router, and writes every
+    transition to the audit log."""
+
+    def __init__(self, bus: Bus, sink: _Sink, lifecycle):
+        self.bus = bus
+        self.sink = sink
+        self.lifecycle = lifecycle
+        self.processed_pairs = 0
+        self.pair_latencies: list[float] = []
+
+    async def run(self, consumer: str = "canary-0") -> None:
+        await self.bus.publish(
+            CONTROL, {"kind": SHARE_UPDATE, "share": self.lifecycle.share}
+        )
+        async for message in self.bus.consume([VERDICTS], "decision", consumer):
+            p = message.payload
+            self.processed_pairs += 1
+            if p.get("pair_emitted_at") and p.get("judged_at"):
+                self.pair_latencies.append(p["judged_at"] - p["pair_emitted_at"])
+            if p["winner"] != "tie":
+                index = p["request_index"]
+                transition = self.lifecycle.update(p["winner"] == "b", index)
+                if transition is not None:
+                    payload = {
+                        "request_index": index,
+                        "kind": transition.kind,
+                        "stage": transition.stage,
+                        "share": transition.share,
+                        "verdicts_in_stage": transition.verdicts_in_stage,
+                    }
+                    await self.sink.emit(10 * index + 9, CANARY_TRANSITION, payload)
+                    await self.bus.publish(
+                        CONTROL, {"kind": SHARE_UPDATE, "share": transition.share}
+                    )
+                    metrics.ALARMS.labels(transition.kind).inc()
+            await self.bus.ack(message, "decision")
+            metrics.MESSAGES_PROCESSED.labels("canary").inc()
 
 
 class DecisionService:

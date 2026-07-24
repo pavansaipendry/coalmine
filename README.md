@@ -191,6 +191,45 @@ Redis, Postgres, Prometheus, and a provisioned Grafana dashboard for local
 runs. The event log doubles as the trace — every request's path through the
 pipeline is reconstructible from its events.
 
+## Results so far (Phase 6: the closed loop)
+
+**The capstone: ramp, promote, and roll back — no humans.** An equal-quality
+challenger climbs the whole ladder through the live fleet — shadow → 1% → 5%
+→ 25% → 100% — each step gated by a fresh non-inferiority mixture SPRT
+(6-point margin, α/4 per gate so the whole ramp holds α), promoted at request
+10,525. A challenger that regresses mid-ramp (ε = 25% injected during the 5%
+stage) is caught by the continuous rollback CUSUM **1,065 requests after the
+injection** and yanked to 0% — after the rollback's share update reaches the
+router, the challenger serves exactly zero users. Every gate pass, the
+promotion, and the rollback are events; the audit trail is read back from the
+store, not from program state.
+
+![canary lifecycle](experiments/results/canary_lifecycle.png)
+
+**The front door.** `python -m coalmine.api.server` starts the serving API
+with the judging fleet and canary controller behind it: POST `/serve` routes
+each user request per the lifecycle's current share, GET `/state` reports the
+lifecycle, GET `/events/stream` tails the log as SSE, and `/` is a live
+dashboard (stage, share, rolling win rate, audit trail, event tail — no build
+step, no external assets). Load-tested through real HTTP: **8.9ms p50 / 72ms
+p99** at light load, **~330 req/s saturated** on a single process with every
+request logged, shadow-sampled, and judged asynchronously.
+`deploy/k6-load.js` is the equivalent k6 scenario.
+
+![http load](experiments/results/http_load.png)
+
+## Honest ledger
+
+Everything above is measured by seeded, reproducible experiments; every
+detector's threshold is calibrated by simulating its own procedure. Remaining
+future work, deliberately not claimed: real-dataset pools and MT-Bench anchor
+import (format and loaders exist; the data path needs a download step), a
+live LLM-judge calibration study (LLMJudge is built and unit-tested; the live
+call needs an API key decision), a React/Vite build of the dashboard (the
+current one is a self-contained single file), k6 runs with the real binary
+(the Python load harness is the measured path), and Postgres partitioning for
+long-horizon soaks.
+
 ## Design principles
 
 - **Verdict-channel abstraction.** The decision engine consumes win/loss/tie
@@ -215,7 +254,7 @@ pipeline is reconstructible from its events.
 
 ```bash
 uv venv .venv && uv pip install -e ".[dev]" -p .venv/bin/python
-.venv/bin/pytest -q                        # 118 deterministic tests (Postgres + Redis in CI)
+.venv/bin/pytest -q                        # 129 deterministic tests (Postgres + Redis in CI)
 .venv/bin/python -m coalmine.experiments.detection_latency
 .venv/bin/python -m coalmine.experiments.sprt_validation
 .venv/bin/python -m coalmine.experiments.epsilon_verification
@@ -229,6 +268,9 @@ uv venv .venv && uv pip install -e ".[dev]" -p .venv/bin/python
 .venv/bin/python -m coalmine.experiments.fleet_run       # uses local Redis if present
 .venv/bin/python -m coalmine.experiments.drift_gate
 .venv/bin/python -m coalmine.experiments.judge_ensemble
+.venv/bin/python -m coalmine.experiments.canary_lifecycle
+.venv/bin/python -m coalmine.experiments.http_load
+.venv/bin/python -m coalmine.api.server                  # live server + dashboard
 ```
 
 Runs on CPU in a few minutes; no GPU anywhere. The Postgres store tests skip
@@ -243,7 +285,7 @@ unless `COALMINE_PG_DSN` is set (CI provides a postgres:16 service container).
 | 3 | Judging layer: position randomization + measured bias, sampling, anchor-set calibration, LLM judge, full-loop detection | **done** |
 | 4 | mSPRT + stitched confidence sequence; three-way comparison; k challengers with alpha spending; stratified tests | **done** |
 | 5 | Redis Streams fleet; chaos-verified exactly-once effects; drift monitor gating the decision engine; judge ensemble w/ disagreement-as-drift; Prometheus + Grafana | **done** |
-| 6 | Closed-loop canary lifecycle: shadow → 1% → 5% → 25% → 100% ramp with per-step gates and auto-rollback; React dashboard | next |
+| 6 | Closed-loop canary lifecycle: gated ramp + auto-rollback; HTTP API + live SSE dashboard; load test | **done** |
 
 Architecture notes and the full design rationale live in
 [docs/DESIGN.md](docs/DESIGN.md).

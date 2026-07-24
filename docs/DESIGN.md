@@ -138,13 +138,22 @@ Remaining for Phase 6: the canary lifecycle state machine over this fleet,
 HTTP surface + React dashboard (SSE), k6 load tests against that surface, and
 Postgres partitioning for long-horizon soaks.
 
-## The capstone loop (Phase 6)
+## The capstone loop (Phase 6 — implemented)
 
-Canary lifecycle state machine: challenger at shadow (0% user traffic) →
-sequential gate passes → ramp 1% → 5% → 25% → 100%, a fresh sequential test
-gating every step → auto-rollback on any post-promotion regression, full audit
-trail event-sourced. Demo: inject a regression mid-ramp, watch the system
-catch it, roll back, and print the audit log of every decision it made.
+Canary lifecycle state machine (`coalmine/canary/lifecycle.py`): challenger
+at shadow (0%) → 1% → 5% → 25% → 100%, each advance gated by a fresh
+one-sided non-inferiority mixture SPRT (H0: p = 0.5 − margin) at α/k — union
+bound over the ramp's gates, valid under continuous peeking — with a
+continuous CUSUM rollback alarm active at every stage. Terminal at promoted
+or rolled-back; post-promotion monitoring is the standing decision service.
+The CanaryController drives it on the fleet bus and publishes share updates
+on the control stream; the router applies them to user routing. Measured: an
+equal challenger promotes in ~10.5k requests; a mid-ramp regression rolls
+back +1,065 requests after injection, with zero challenger-served users
+afterward. The HTTP surface (`coalmine/api/server.py`) exposes /serve,
+/state, /events/stream (SSE), and a self-contained live dashboard; load
+tested at 8.9ms p50 light-load latency and ~330 req/s saturated on one
+process.
 
 ## Two-tier testing
 
