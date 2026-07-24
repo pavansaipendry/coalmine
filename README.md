@@ -28,9 +28,9 @@ Every threshold in the system is calibrated by simulating its own procedure;
 every claim above regenerates from a seeded experiment listed under
 [Repro](#repro).
 
-## Results so far (Phase 1: the decision engine)
+## The decision engine
 
-All numbers from seeded Monte Carlo runs — reproduce with the commands below.
+All numbers from seeded runs — reproduce with the commands under Repro.
 
 **Peeking is broken; the sequential test is not.** On identical null streams
 (no regression, 20,000 pairwise verdicts), a repeated t-test peeking every 100
@@ -56,7 +56,7 @@ predicts. This is the evidence the engine is correct, not just plausible.
 
 ![sprt validation](experiments/results/sprt_validation.png)
 
-## Results so far (Phase 2: traffic, shadowing, the event log)
+## Traffic, shadowing, and the event log
 
 **Shadowing costs the user nothing — measured, not asserted.** Three paced runs
 (1,200 requests at 60 rps) share identical seeded arrivals and champion latency
@@ -80,13 +80,13 @@ order-free content fingerprints (response content is a pure function of
 Storage is event-sourced behind one interface with two backends — SQLite
 (zero-setup dev) and Postgres (the fleet backend, exercised in CI against a
 real service container). Appends are idempotent on (run_id, seq), so
-at-least-once delivery yields exactly-once storage: the chaos-testing phase is
-safe by construction.
+at-least-once delivery yields exactly-once storage: chaos testing is safe by
+construction.
 
-## Results so far (Phase 3: the judging layer, and the first full loop)
+## The judging layer, and the full loop
 
-**The full loop catches an injected regression end to end.** First composition
-of all three phases: 30,000 simulated requests flow through the shadow router;
+**The full loop catches an injected regression end to end.** Traffic,
+judging, and detection composed: 30,000 simulated requests flow through the shadow router;
 a noisy position-randomized judge (accuracy 85%, ties 10%, position bias 15%)
 turns the 25% shadow-sampled pairs into verdicts; the calibrated CUSUM watches
 the decisive-verdict stream. A 15% ε-mixture regression injected at request
@@ -124,7 +124,7 @@ identity or ground-truth labels. Per the cost discipline in the design, the
 big experiments never call it: it exists for the live demo path and the
 anchor-set calibration study that estimates the channel parameters.
 
-## Results so far (Phase 4: three sequential methods, k arms, stratification)
+## Three sequential methods, k challengers, stratified monitors
 
 **Three-way method comparison — each method's real trade-off, measured.**
 Wald's SPRT, the one-sided mixture SPRT (the always-valid method Optimizely
@@ -165,7 +165,7 @@ pipeline: traffic → judge → per-stratum detection.
 
 ![stratified](experiments/results/stratified.png)
 
-## Results so far (Phase 5: the fleet, chaos, drift gating, the ensemble)
+## The fleet: chaos, drift gating, and the judge ensemble
 
 **The fleet on real Redis, with every worker killed — and nothing changes.**
 The multi-service pipeline (traffic → router → 3 judge workers in one
@@ -176,7 +176,7 @@ because every effect is idempotent (event seqs derived from request identity)
 and deterministic (per-request RNG streams), the run converges to
 byte-identical verdicts and the identical alarm at request 13,258 — verified
 by fingerprint. The fleet's detection latency independently reproduces
-Phase 3's in-process result on the same statistical setup.
+the in-process pipeline's result on the same statistical setup.
 
 ![fleet run](experiments/results/fleet_run.png)
 
@@ -207,7 +207,7 @@ Redis, Postgres, Prometheus, and a provisioned Grafana dashboard for local
 runs. The event log doubles as the trace — every request's path through the
 pipeline is reconstructible from its events.
 
-## Results so far (Phase 6: the closed loop)
+## The closed loop
 
 **The capstone: ramp, promote, and roll back — no humans.** An equal-quality
 challenger climbs the whole ladder through the live fleet — shadow → 1% → 5%
@@ -234,7 +234,7 @@ request logged, shadow-sampled, and judged asynchronously.
 
 ![http load](experiments/results/http_load.png)
 
-## Results so far (beyond the plan: better detection, a real judge, no API)
+## Sharper detection, and a judge measured on humans
 
 **Ensemble judging buys back the channel's attenuation — quadratically.**
 Detection latency scales like 1/shift² and the judge channel attenuates every
@@ -325,16 +325,6 @@ uv venv .venv && uv pip install -e ".[dev]" -p .venv/bin/python
 Runs on CPU in a few minutes; no GPU anywhere. The Postgres store tests skip
 unless `COALMINE_PG_DSN` is set (CI provides a postgres:16 service container).
 
-## Roadmap
-
-| Phase | Scope | Status |
-|---|---|---|
-| 1 | Decision engine: SPRT + CUSUM, judge channel model, Wald planning calculator, vectorized Monte Carlo validation | **done** |
-| 2 | Traffic simulator, shadow router, ε-mixture response pools, event-sourced log (SQLite + Postgres) | **done** |
-| 3 | Judging layer: position randomization + measured bias, sampling, anchor-set calibration, LLM judge, full-loop detection | **done** |
-| 4 | mSPRT + stitched confidence sequence; three-way comparison; k challengers with alpha spending; stratified tests | **done** |
-| 5 | Redis Streams fleet; chaos-verified exactly-once effects; drift monitor gating the decision engine; judge ensemble w/ disagreement-as-drift; Prometheus + Grafana | **done** |
-| 6 | Closed-loop canary lifecycle: gated ramp + auto-rollback; HTTP API + live SSE dashboard; load test | **done** |
-
 Architecture notes and the full design rationale live in
-[docs/DESIGN.md](docs/DESIGN.md).
+[docs/DESIGN.md](docs/DESIGN.md); interview-ready summaries of every
+number in [docs/INTERVIEW_PREP.md](docs/INTERVIEW_PREP.md). MIT licensed.
