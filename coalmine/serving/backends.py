@@ -100,12 +100,26 @@ class PoolBackend:
         return Response(self.config_id, text, self.quality, latency_ms)
 
 
-def step_schedule(epsilon: float, changepoint: int | None) -> Callable[[int], float]:
-    """ε as a function of request index: 0 before the changepoint, ε after.
+def step_schedule(epsilon: float, changepoint: int | None) -> Callable[[Request], float]:
+    """ε as a function of the request: 0 before the changepoint, ε after.
     changepoint=None means never regressed."""
 
-    def schedule(index: int) -> float:
-        if changepoint is None or index < changepoint:
+    def schedule(request: Request) -> float:
+        if changepoint is None or request.index < changepoint:
+            return 0.0
+        return epsilon
+
+    return schedule
+
+
+def topic_step_schedule(
+    epsilon: float, changepoint: int, topic: str
+) -> Callable[[Request], float]:
+    """A regression confined to one topic — the stratified-monitoring scenario:
+    aggregate quality barely moves while one slice of traffic degrades hard."""
+
+    def schedule(request: Request) -> float:
+        if request.query.topic != topic or request.index < changepoint:
             return 0.0
         return epsilon
 
@@ -121,7 +135,7 @@ class MixtureBackend:
         config_id: str,
         good: PoolBackend,
         bad: PoolBackend,
-        epsilon_schedule: Callable[[int], float],
+        epsilon_schedule: Callable[[Request], float],
         seed: int,
     ):
         if good.config_id != config_id or bad.config_id != config_id:
@@ -133,7 +147,7 @@ class MixtureBackend:
         self.seed = seed
 
     async def generate(self, request: Request) -> Response:
-        eps = self.epsilon_schedule(request.index)
+        eps = self.epsilon_schedule(request)
         rng = request_rng(self.seed, request.index, f"{self.config_id}#mixture")
         backend = self.bad if rng.random() < eps else self.good
         resp = await backend.generate(request)

@@ -1,0 +1,193 @@
+{
+  "config": {
+    "p0": 0.5,
+    "sprt_p1": 0.55,
+    "alpha": 0.05,
+    "horizon": 20000,
+    "trials": 1500,
+    "null_trials": 4000,
+    "prefixes": [
+      0,
+      2500,
+      5000,
+      10000
+    ],
+    "drop_to": 0.45,
+    "seed": 2028
+  },
+  "decision": {
+    "grid": [
+      {
+        "w": 0.52,
+        "SPRT": {
+          "detect_rate": 0.3273333333333333,
+          "median_time": 574.0
+        },
+        "mSPRT": {
+          "detect_rate": 0.9926666666666667,
+          "median_time": 5799.0
+        },
+        "Stitched CS": {
+          "detect_rate": 0.972,
+          "median_time": 8362.0
+        }
+      },
+      {
+        "w": 0.54,
+        "SPRT": {
+          "detect_rate": 0.768,
+          "median_time": 502.0
+        },
+        "mSPRT": {
+          "detect_rate": 1.0,
+          "median_time": 1333.0
+        },
+        "Stitched CS": {
+          "detect_rate": 1.0,
+          "median_time": 2158.0
+        }
+      },
+      {
+        "w": 0.55,
+        "SPRT": {
+          "detect_rate": 0.9066666666666666,
+          "median_time": 416.0
+        },
+        "mSPRT": {
+          "detect_rate": 1.0,
+          "median_time": 820.0
+        },
+        "Stitched CS": {
+          "detect_rate": 1.0,
+          "median_time": 1383.5
+        }
+      },
+      {
+        "w": 0.56,
+        "SPRT": {
+          "detect_rate": 0.96,
+          "median_time": 336.0
+        },
+        "mSPRT": {
+          "detect_rate": 1.0,
+          "median_time": 524.0
+        },
+        "Stitched CS": {
+          "detect_rate": 1.0,
+          "median_time": 936.0
+        }
+      },
+      {
+        "w": 0.58,
+        "SPRT": {
+          "detect_rate": 0.992,
+          "median_time": 229.0
+        },
+        "mSPRT": {
+          "detect_rate": 1.0,
+          "median_time": 261.0
+        },
+        "Stitched CS": {
+          "detect_rate": 1.0,
+          "median_time": 524.0
+        }
+      },
+      {
+        "w": 0.6,
+        "SPRT": {
+          "detect_rate": 0.9986666666666667,
+          "median_time": 176.0
+        },
+        "mSPRT": {
+          "detect_rate": 1.0,
+          "median_time": 168.0
+        },
+        "Stitched CS": {
+          "detect_rate": 1.0,
+          "median_time": 329.0
+        }
+      }
+    ],
+    "false_promotion": {
+      "SPRT": 0.046,
+      "mSPRT": 0.03775,
+      "Stitched CS": 0.00275
+    }
+  },
+  "dilution": {
+    "rows": [
+      {
+        "prefix": 0,
+        "CUSUM": {
+          "detect_rate": 1.0,
+          "median_time": 1113.0,
+          "median_latency": 1113.0
+        },
+        "mSPRT": {
+          "detect_rate": 1.0,
+          "median_time": 784.5,
+          "median_latency": 784.5
+        },
+        "Stitched CS": {
+          "detect_rate": 1.0,
+          "median_time": 1304.0,
+          "median_latency": 1304.0
+        }
+      },
+      {
+        "prefix": 2500,
+        "CUSUM": {
+          "detect_rate": 0.99125,
+          "median_time": 3556.0,
+          "median_latency": 1056.0
+        },
+        "mSPRT": {
+          "detect_rate": 0.9575,
+          "median_time": 4943.0,
+          "median_latency": 2443.0
+        },
+        "Stitched CS": {
+          "detect_rate": 0.995,
+          "median_time": 5369.5,
+          "median_latency": 2869.5
+        }
+      },
+      {
+        "prefix": 5000,
+        "CUSUM": {
+          "detect_rate": 0.99125,
+          "median_time": 6097.0,
+          "median_latency": 1097.0
+        },
+        "mSPRT": {
+          "detect_rate": 0.9625,
+          "median_time": 8244.0,
+          "median_latency": 3244.0
+        },
+        "Stitched CS": {
+          "detect_rate": 0.9975,
+          "median_time": 8725.0,
+          "median_latency": 3725.0
+        }
+      },
+      {
+        "prefix": 10000,
+        "CUSUM": {
+          "detect_rate": 0.98625,
+          "median_time": 11127.0,
+          "median_latency": 1127.0
+        },
+        "mSPRT": {
+          "detect_rate": 0.95,
+          "median_time": 14347.0,
+          "median_latency": 4347.0
+        },
+        "Stitched CS": {
+          "detect_rate": 0.99375,
+          "median_time": 14844.0,
+          "median_latency": 4844.0
+        }
+      }
+    ]
+  }
+}

@@ -6,9 +6,14 @@ against the scalar implementations in coalmine.stats on identical streams —
 the vectorized code must agree exactly, trial for trial.
 """
 
+import math
+
 import numpy as np
+from scipy.special import betainc, betaln
 from scipy.stats import norm
 
+from coalmine.stats.confseq import stitched_radius
+from coalmine.stats.msprt import _log_upper_mass
 from coalmine.stats.wald import increments, thresholds
 
 
@@ -84,6 +89,58 @@ def calibrate_cusum_threshold(
     """
     max_stats = cusum_max_stat(null_wins, p0, p1)
     return float(np.quantile(max_stats, 1.0 - false_alarm_rate))
+
+
+def run_msprt_batch(
+    wins: np.ndarray,
+    p0: float,
+    alpha: float = 0.05,
+    prior_a: float = 1.0,
+    prior_b: float = 1.0,
+    chunk: int = 250,
+) -> np.ndarray:
+    """One-sided mixture SPRT down each row of a (trials, n) win matrix.
+    Returns rejection times (observations consumed), or -1 if never rejected.
+    Must agree trial-for-trial with the scalar MixtureSPRT (cross-validated
+    in tests)."""
+    n_trials, n = wins.shape
+    threshold = math.log(1.0 / alpha)
+    steps = np.arange(1, n + 1, dtype=np.float64)
+    log_prior_norm = betaln(prior_a, prior_b) + _log_upper_mass(prior_a, prior_b, p0)
+    out = np.full(n_trials, -1, dtype=np.int64)
+    for s0 in range(0, n_trials, chunk):
+        w = wins[s0 : s0 + chunk]
+        s = np.cumsum(w, axis=1, dtype=np.float64)
+        f = steps[None, :] - s
+        with np.errstate(divide="ignore"):
+            log_upper = np.log(betainc(prior_b + f, prior_a + s, 1.0 - p0))
+        log_lambda = (
+            betaln(prior_a + s, prior_b + f)
+            + log_upper
+            - log_prior_norm
+            - s * math.log(p0)
+            - f * math.log(1.0 - p0)
+        )
+        t = _first_crossing(log_lambda >= threshold, n)
+        out[s0 : s0 + chunk] = np.where(t == n, -1, t + 1)
+    return out
+
+
+def run_stitched_batch(
+    wins: np.ndarray, p0: float, alpha: float = 0.05, chunk: int = 500
+) -> np.ndarray:
+    """One-sided stitched confidence sequence down each row. Returns rejection
+    times, or -1 if p0 is never excluded."""
+    n_trials, n = wins.shape
+    steps = np.arange(1, n + 1, dtype=np.float64)
+    radius = stitched_radius(steps, alpha)
+    out = np.full(n_trials, -1, dtype=np.int64)
+    for s0 in range(0, n_trials, chunk):
+        w = wins[s0 : s0 + chunk]
+        p_hat = np.cumsum(w, axis=1, dtype=np.float64) / steps[None, :]
+        t = _first_crossing((p_hat - p0) > radius[None, :], n)
+        out[s0 : s0 + chunk] = np.where(t == n, -1, t + 1)
+    return out
 
 
 def naive_peeking_false_alarm_rate(

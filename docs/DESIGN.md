@@ -55,10 +55,26 @@ continuous monitoring.
   time. Threshold h calibrated by simulation: h = (1−rate)-quantile of the
   null running-max distribution over the monitoring horizon.
 
-Planned additions: mSPRT (Optimizely's industrialized mixture SPRT) and one
-time-uniform confidence-sequence method (Howard et al.), compared empirically
-against SPRT on detection latency and realized false alarms; k challengers
-need alpha spending across arms on top of sequential validity.
+Implemented in Phase 4:
+
+- **Mixture SPRT** (one-sided, Beta prior truncated above p0, closed form via
+  the regularized incomplete beta): always-valid by Ville's inequality, no
+  point alternative to tune. Empirically: detects reliably at every effect
+  size where plain SPRT's detection rate collapses off its design point.
+- **Stitched confidence sequence** (Howard et al. closed-form boundary):
+  prior-free but conservative — realized 0.27% of a 5% budget, ~1.6× slower
+  than the mixture. Every method's realized error is measured by Monte Carlo,
+  never trusted from formulas.
+- **Changepoint dilution**: anytime methods test a fixed hypothesis, so a
+  healthy prefix buries a late regression (latency grows ~5× with a 10k
+  prefix) while CUSUM stays flat. Promotion gate and regression alarm are
+  different primitives — measured, not asserted.
+- **k challengers**: per-arm always-valid tests at α/k give family-wise error
+  ≤ α at any k by union bound. Measured: uncorrected 4-arm FWER 15% vs 3.9%
+  corrected, at +48% promotion latency.
+- **Stratified monitors**: per-topic CUSUMs at α/k reuse the log's topic
+  labels (embedding clusters, once real datasets arrive) and catch a
+  one-topic regression ~2× sooner than the aggregate.
 
 ### The judge is a sensor, and sensors lie
 

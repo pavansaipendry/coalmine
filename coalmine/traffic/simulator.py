@@ -22,6 +22,7 @@ from coalmine.serving.backends import (
     Request,
     request_rng,
     step_schedule,
+    topic_step_schedule,
 )
 from coalmine.serving.router import ShadowRouter
 from coalmine.traffic.dataset import Query
@@ -37,6 +38,7 @@ class Scenario:
     shadow_rate: float = 0.2
     epsilon: float = 0.0
     changepoint: int | None = None
+    regressed_topic: str | None = None  # None = regression applies to all topics
     topic_weights: dict[str, float] | None = None  # None = uniform
     topic_weights_after: dict[str, float] | None = None
     topic_shift_at: int | None = None
@@ -92,11 +94,17 @@ async def run_simulation(
     champion = PoolBackend(
         "champion", pool, "good", scenario.seed, latency=scenario.champion_latency
     )
+    if scenario.regressed_topic is not None:
+        schedule = topic_step_schedule(
+            scenario.epsilon, scenario.changepoint or 0, scenario.regressed_topic
+        )
+    else:
+        schedule = step_schedule(scenario.epsilon, scenario.changepoint)
     challenger = MixtureBackend(
         "challenger",
         PoolBackend("challenger", pool, "good", scenario.seed, scenario.challenger_latency),
         PoolBackend("challenger", pool, "bad", scenario.seed, scenario.challenger_latency),
-        step_schedule(scenario.epsilon, scenario.changepoint),
+        schedule,
         scenario.seed,
     )
 

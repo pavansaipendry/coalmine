@@ -108,6 +108,47 @@ identity or ground-truth labels. Per the cost discipline in the design, the
 big experiments never call it: it exists for the live demo path and the
 anchor-set calibration study that estimates the channel parameters.
 
+## Results so far (Phase 4: three sequential methods, k arms, stratification)
+
+**Three-way method comparison — each method's real trade-off, measured.**
+Wald's SPRT, the one-sided mixture SPRT (the always-valid method Optimizely
+industrialized), and the Howard-et-al stitched confidence sequence, all at a
+nominal 5%. SPRT is fastest at its design point but its detection rate
+collapses to 33% at effects smaller than the point alternative it was tuned
+for; the mixture SPRT detects reliably at every effect size with no
+alternative to tune, at ~1.6× lower latency than the stitched CS; the
+stitched boundary realizes only 0.27% of its 5% budget — the closed form is
+paid for in conservatism. All three hold the error budget.
+
+![method comparison](experiments/results/method_comparison.png)
+
+**Why the alarm is a CUSUM and not an anytime test.** The always-valid
+methods test a fixed hypothesis over the whole stream, so a healthy prefix
+buries a late regression: their detection latency grows ~5× as the prefix
+grows to 10,000 verdicts, while CUSUM — which restarts its evidence at zero —
+stays flat at ~1,100 verdicts regardless. Promotion gates and regression
+alarms are different primitives; this chart is the reason.
+
+![changepoint dilution](experiments/results/changepoint_dilution.png)
+
+**Four challengers without alpha spending is peeking again.** Watching 4 null
+challengers each at α = 5% promotes some not-better arm 15.0% of the time —
+3× the budget. Splitting the budget (α/4 per arm, valid at any k by union
+bound over anytime tests) holds the family-wise error at 3.9%, and the
+measured price is +48% promotion latency on a truly better arm.
+
+![multiarm](experiments/results/multiarm.png)
+
+**Stratified monitors catch what the aggregate smears out.** A regression
+confined to one topic (25% of traffic) is diluted 4:1 in the aggregate win
+rate but violent inside its stratum. Per-topic CUSUMs at α/4 — reusing the
+topic labels already in the event log — catch it 1.9× sooner than the
+aggregate monitor (+5,819 vs +10,977 requests), with zero false alarms on
+healthy topics or the paired null run. Run end to end through the real
+pipeline: traffic → judge → per-stratum detection.
+
+![stratified](experiments/results/stratified.png)
+
 ## Design principles
 
 - **Verdict-channel abstraction.** The decision engine consumes win/loss/tie
@@ -132,7 +173,7 @@ anchor-set calibration study that estimates the channel parameters.
 
 ```bash
 uv venv .venv && uv pip install -e ".[dev]" -p .venv/bin/python
-.venv/bin/pytest -q                        # 76 deterministic tests (4 need Postgres)
+.venv/bin/pytest -q                        # 94 deterministic tests (4 need Postgres)
 .venv/bin/python -m coalmine.experiments.detection_latency
 .venv/bin/python -m coalmine.experiments.sprt_validation
 .venv/bin/python -m coalmine.experiments.epsilon_verification
@@ -140,6 +181,9 @@ uv venv .venv && uv pip install -e ".[dev]" -p .venv/bin/python
 .venv/bin/python -m coalmine.experiments.full_loop
 .venv/bin/python -m coalmine.experiments.position_bias
 .venv/bin/python -m coalmine.experiments.judge_calibration
+.venv/bin/python -m coalmine.experiments.method_comparison
+.venv/bin/python -m coalmine.experiments.multiarm
+.venv/bin/python -m coalmine.experiments.stratified
 ```
 
 Runs on CPU in a few minutes; no GPU anywhere. The Postgres store tests skip
@@ -152,8 +196,8 @@ unless `COALMINE_PG_DSN` is set (CI provides a postgres:16 service container).
 | 1 | Decision engine: SPRT + CUSUM, judge channel model, Wald planning calculator, vectorized Monte Carlo validation | **done** |
 | 2 | Traffic simulator, shadow router, ε-mixture response pools, event-sourced log (SQLite + Postgres) | **done** |
 | 3 | Judging layer: position randomization + measured bias, sampling, anchor-set calibration, LLM judge, full-loop detection | **done** |
-| 4 | mSPRT + confidence sequences; three-way method comparison; k challengers with alpha spending; stratified tests | next |
-| 5 | Multi-service fleet on Redis streams, load tests, chaos tests, Prometheus/Grafana/OTel | |
+| 4 | mSPRT + stitched confidence sequence; three-way comparison; k challengers with alpha spending; stratified tests | **done** |
+| 5 | Multi-service fleet on Redis streams; drift monitors (input/output, gating the decision engine); judge ensemble with disagreement-as-drift; load tests, chaos tests, Prometheus/Grafana/OTel | next |
 | 6 | Closed-loop canary lifecycle: shadow → 1% → 5% → 25% → 100% ramp with per-step gates and auto-rollback; React dashboard | |
 
 Architecture notes and the full design rationale live in

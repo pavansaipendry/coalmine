@@ -1,0 +1,16 @@
+{
+  "config": {
+    "k": 4,
+    "alpha": 0.05,
+    "horizon": 20000,
+    "null_trials": 2000,
+    "good_arm_w": 0.55,
+    "latency_trials": 1500,
+    "seed": 2029
+  },
+  "fwer_uncorrected": 0.1505,
+  "fwer_corrected": 0.0385,
+  "latency_uncorrected": 775.0,
+  "latency_corrected": 1149.0,
+  "latency_cost": 0.4825806451612904
+}

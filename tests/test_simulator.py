@@ -85,6 +85,34 @@ async def test_run_lifecycle_events_and_counts(tmp_path):
     store.close()
 
 
+async def test_topic_confined_regression(tmp_path):
+    queries, pool = _fixtures()
+    store = SQLiteEventStore(tmp_path / "topic_reg.db")
+    scenario = Scenario(
+        run_id="topic-reg",
+        seed=9,
+        n_requests=600,
+        shadow_rate=1.0,
+        epsilon=1.0,  # deterministic: every regressed request serves bad
+        changepoint=300,
+        regressed_topic="coding",
+    )
+    await run_simulation(scenario, queries, pool, store)
+    events = store.read("topic-reg")
+    topic_of = {
+        e.payload["request_index"]: e.payload["topic"]
+        for e in events
+        if e.type == REQUEST_RECEIVED
+    }
+    for e in events:
+        if e.type != "shadow_response":
+            continue
+        idx = e.payload["request_index"]
+        expect_bad = topic_of[idx] == "coding" and idx >= 300
+        assert (e.payload["source_pool"] == "bad") == expect_bad, f"request {idx}"
+    store.close()
+
+
 async def test_paced_mode_runs_concurrently(tmp_path):
     queries, pool = _fixtures()
     store = SQLiteEventStore(tmp_path / "paced.db")
