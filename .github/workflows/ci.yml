@@ -20,8 +20,18 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
       COALMINE_PG_DSN: postgresql://postgres:postgres@localhost:5432/postgres
+      COALMINE_REDIS_URL: redis://localhost:6379/0
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -38,6 +48,18 @@ jobs:
   statistical-soak:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      COALMINE_REDIS_URL: redis://localhost:6379/0
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -54,6 +76,9 @@ jobs:
       - run: python -m coalmine.experiments.method_comparison --seed ${{ github.run_id }}
       - run: python -m coalmine.experiments.multiarm --seed ${{ github.run_id }}
       - run: python -m coalmine.experiments.stratified --seed ${{ github.run_id }}
+      - run: python -m coalmine.experiments.fleet_run --seed ${{ github.run_id }}
+      - run: python -m coalmine.experiments.drift_gate --seed ${{ github.run_id }}
+      - run: python -m coalmine.experiments.judge_ensemble --seed ${{ github.run_id }}
       - uses: actions/upload-artifact@v4
         with:
           name: soak-results

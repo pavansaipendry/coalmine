@@ -149,6 +149,48 @@ pipeline: traffic → judge → per-stratum detection.
 
 ![stratified](experiments/results/stratified.png)
 
+## Results so far (Phase 5: the fleet, chaos, drift gating, the ensemble)
+
+**The fleet on real Redis, with every worker killed — and nothing changes.**
+The multi-service pipeline (traffic → router → 3 judge workers in one
+consumer group → decision engine, with the drift monitor alongside) sustains
+~2,700 req/s over Redis Streams. In the chaos run all three judge workers are
+killed mid-flight; unacked messages are reclaimed by the survivors, and
+because every effect is idempotent (event seqs derived from request identity)
+and deterministic (per-request RNG streams), the run converges to
+byte-identical verdicts and the identical alarm at request 13,258 — verified
+by fingerprint. The fleet's detection latency independently reproduces
+Phase 3's in-process result on the same statistical setup.
+
+![fleet run](experiments/results/fleet_run.png)
+
+**The drift gate: "traffic changed, not the model."** The challenger has a
+stable weakness on one topic; at request 15,000 the traffic mix shifts toward
+that topic and the aggregate win rate drops — with neither config changed. An
+ungated CUSUM blames the model (false quality alarm at 20,110). The drift
+monitor sees the mix shift in 199 requests, fires first, resets the in-flight
+test and re-baselines; per-topic win rates confirm nothing moved within any
+topic (coding: 45.7% → 44.9%). A homogeneous control shows the gate isn't
+suppression: its drift alarm fires, its quality alarm never does.
+
+![drift gate](experiments/results/drift_gate.png)
+
+**The ensemble absorbs a failing judge — and notices it without labels.**
+When one of three judges silently degrades (0.85 → 0.55), majority voting
+holds ensemble accuracy at 86.6% while the bad member falls to coin-flip
+territory — and the members' disagreement rate jumps past its calibrated
+threshold 249 comparisons after the degradation begins, a sensor alarm that
+needs no ground truth and fires long before the next scheduled anchor-set
+calibration round.
+
+![judge ensemble](experiments/results/judge_ensemble.png)
+
+The fleet is observable end to end: Prometheus counters and histograms per
+stage (`coalmine.fleet.metrics`), and `deploy/docker-compose.yml` brings up
+Redis, Postgres, Prometheus, and a provisioned Grafana dashboard for local
+runs. The event log doubles as the trace — every request's path through the
+pipeline is reconstructible from its events.
+
 ## Design principles
 
 - **Verdict-channel abstraction.** The decision engine consumes win/loss/tie
@@ -173,7 +215,7 @@ pipeline: traffic → judge → per-stratum detection.
 
 ```bash
 uv venv .venv && uv pip install -e ".[dev]" -p .venv/bin/python
-.venv/bin/pytest -q                        # 94 deterministic tests (4 need Postgres)
+.venv/bin/pytest -q                        # 118 deterministic tests (Postgres + Redis in CI)
 .venv/bin/python -m coalmine.experiments.detection_latency
 .venv/bin/python -m coalmine.experiments.sprt_validation
 .venv/bin/python -m coalmine.experiments.epsilon_verification
@@ -184,6 +226,9 @@ uv venv .venv && uv pip install -e ".[dev]" -p .venv/bin/python
 .venv/bin/python -m coalmine.experiments.method_comparison
 .venv/bin/python -m coalmine.experiments.multiarm
 .venv/bin/python -m coalmine.experiments.stratified
+.venv/bin/python -m coalmine.experiments.fleet_run       # uses local Redis if present
+.venv/bin/python -m coalmine.experiments.drift_gate
+.venv/bin/python -m coalmine.experiments.judge_ensemble
 ```
 
 Runs on CPU in a few minutes; no GPU anywhere. The Postgres store tests skip
@@ -197,8 +242,8 @@ unless `COALMINE_PG_DSN` is set (CI provides a postgres:16 service container).
 | 2 | Traffic simulator, shadow router, ε-mixture response pools, event-sourced log (SQLite + Postgres) | **done** |
 | 3 | Judging layer: position randomization + measured bias, sampling, anchor-set calibration, LLM judge, full-loop detection | **done** |
 | 4 | mSPRT + stitched confidence sequence; three-way comparison; k challengers with alpha spending; stratified tests | **done** |
-| 5 | Multi-service fleet on Redis streams; drift monitors (input/output, gating the decision engine); judge ensemble with disagreement-as-drift; load tests, chaos tests, Prometheus/Grafana/OTel | next |
-| 6 | Closed-loop canary lifecycle: shadow → 1% → 5% → 25% → 100% ramp with per-step gates and auto-rollback; React dashboard | |
+| 5 | Redis Streams fleet; chaos-verified exactly-once effects; drift monitor gating the decision engine; judge ensemble w/ disagreement-as-drift; Prometheus + Grafana | **done** |
+| 6 | Closed-loop canary lifecycle: shadow → 1% → 5% → 25% → 100% ramp with per-step gates and auto-rollback; React dashboard | next |
 
 Architecture notes and the full design rationale live in
 [docs/DESIGN.md](docs/DESIGN.md).

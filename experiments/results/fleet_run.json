@@ -1,0 +1,47 @@
+{
+  "config": {
+    "n_requests": 20000,
+    "changepoint": 8000,
+    "epsilon": 0.15,
+    "shadow_rate": 0.25,
+    "n_judges": 3,
+    "judge": {
+      "accuracy": 0.85,
+      "tie_rate": 0.1,
+      "position_bias": 0.15
+    },
+    "bus": "redis",
+    "seed": 101
+  },
+  "baseline": {
+    "rps": 2676.4251357834137,
+    "wall_seconds": 7.472654374898411,
+    "verdicts": 5040,
+    "quality_alarm_at": 13258,
+    "drift_alarmed": false,
+    "worker_verdicts": {
+      "judge-0": 1687,
+      "judge-1": 1677,
+      "judge-2": 1676
+    },
+    "pair_latency_ms": {
+      "p50": 0.22339820861816406,
+      "p99": 1.1171078681945794
+    }
+  },
+  "chaos": {
+    "rps": 2714.6447245585077,
+    "verdicts": 5040,
+    "quality_alarm_at": 13258,
+    "worker_verdicts": {
+      "judge-0": 1325,
+      "judge-1": 783,
+      "judge-2": 1624
+    },
+    "pair_latency_ms": {
+      "p50": 0.2219676971435547,
+      "p99": 1.1234474182128884
+    }
+  },
+  "converged": true
+}

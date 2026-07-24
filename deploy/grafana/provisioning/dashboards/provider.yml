@@ -1,0 +1,7 @@
+apiVersion: 1
+providers:
+  - name: coalmine
+    folder: coalmine
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards

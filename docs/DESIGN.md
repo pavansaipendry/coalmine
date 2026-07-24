@@ -119,14 +119,24 @@ event ordering deliberately is not.
 
 ## Systems layer (Phases 2, 5, 6)
 
-Multi-service topology on Redis streams with consumer groups (traffic gen,
-shadow router, judge workers, decision engine, drift monitor), horizontally
-scalable judge workers, docker-compose fleet. Postgres event-sourced log
-(partitioned) with deterministic replay — new detector versions are backtested
-against recorded history. k6 load tests publish the p50/p99 shadow-overhead
-numbers. Chaos: kill workers mid-run, restart Redis, verify identical final
-decisions (idempotent, at-least-once processing). Prometheus + Grafana + OTel
-throughout; React dashboard reads the same metrics via SSE.
+Implemented in Phase 5: multi-service topology on Redis Streams with consumer
+groups (traffic, router, judge workers, drift monitor, decision engine) —
+`coalmine/fleet/`. Exactly-once effects without coordination: event seqs are
+derived from request identity (seq bands) and every handler is a pure
+function of its message, so at-least-once delivery + idempotent appends
+converge; chaos runs (every judge worker killed mid-flight) verify
+byte-identical final state by fingerprint, over both the real Redis bus and
+its in-memory twin. The drift monitor (windowed PSI over topic labels,
+threshold calibrated by simulating the monitor's own sliding-window procedure
+— independent-window calibration understates the max statistic and the test
+suite caught exactly that) gates the decision engine: a drift alarm resets
+in-flight sequential tests and triggers re-baselining. Prometheus metrics per
+stage; `deploy/docker-compose.yml` provisions Redis/Postgres/Prometheus/
+Grafana with a committed dashboard. The event log doubles as the trace.
+
+Remaining for Phase 6: the canary lifecycle state machine over this fleet,
+HTTP surface + React dashboard (SSE), k6 load tests against that surface, and
+Postgres partitioning for long-horizon soaks.
 
 ## The capstone loop (Phase 6)
 

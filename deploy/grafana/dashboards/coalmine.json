@@ -1,0 +1,59 @@
+{
+  "title": "coalmine fleet",
+  "uid": "coalmine-fleet",
+  "timezone": "browser",
+  "refresh": "5s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Throughput by service (msgs/s)",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "targets": [
+        {
+          "expr": "rate(coalmine_messages_processed_total[30s])",
+          "legendFormat": "{{service}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Stage latency p99 (s)",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, rate(coalmine_stage_latency_seconds_bucket[30s]))",
+          "legendFormat": "{{service}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Alarms",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 8},
+      "targets": [
+        {"expr": "coalmine_alarms_total", "legendFormat": "{{kind}}"}
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Pending messages",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 8},
+      "targets": [
+        {"expr": "coalmine_stream_pending", "legendFormat": "{{stream}}/{{group}}"}
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Worker restarts (chaos)",
+      "type": "stat",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 8},
+      "targets": [{"expr": "coalmine_worker_restarts_total"}]
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 1
+}
